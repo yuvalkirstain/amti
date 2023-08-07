@@ -132,7 +132,10 @@ def tabular(
             row['AutoApprovalTime'] = assignment['AutoApprovalTime']
             row['AcceptTime'] = assignment['AcceptTime']
             row['SubmitTime'] = assignment['SubmitTime']
-            row['ApprovalTime'] = assignment['ApprovalTime']
+            if 'ApprovalTime' in assignment:
+                row['ApprovalTime'] = assignment['ApprovalTime']
+            if 'RejectionTime' in assignment:
+                row['RejectionTime'] = assignment['RejectionTime']
 
             # parse the response and add it to the row
             xml = minidom.parseString(assignment['Answer'])
