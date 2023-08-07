@@ -15,7 +15,8 @@ logger = logging.getLogger(__name__)
 
 def save_batch(
         client,
-        batch_dir):
+        batch_dir,
+        force=False):
     """Save results from turkers working a batch to disk.
 
     In order to save the results from a batch to disk, every HIT in the
@@ -27,6 +28,8 @@ def save_batch(
         a boto3 client for MTurk.
     batch_dir : str
         the path to the batch's directory.
+    force : bool, optional
+        whether to force saving the batch even if not all HITs are completed
 
     Returns
     -------
@@ -85,6 +88,8 @@ def save_batch(
 
             hit_status = hit['HIT']['HITStatus']
             if hit_status != 'Reviewable':
+                if force:
+                    continue
                 raise ValueError(
                     f'HIT (ID: {hit_id}) has status "{hit_status}".'
                     f' In order to save a batch all HITs must have'
@@ -106,6 +111,8 @@ def save_batch(
                             f' {assignment_status}.')
 
                         if assignment_status not in ['Approved', 'Rejected']:
+                            if force:
+                                continue
                             raise ValueError(
                                 f'Assignment (ID: {assignment_id}) has status'
                                 f' "{assignment_status}". In order to save a'
@@ -123,6 +130,6 @@ def save_batch(
         shutil.copytree(working_dir, results_dir)
 
     # remove the incomplete file since the batch is now complete
-    os.remove(incomplete_file_path)
+    # os.remove(incomplete_file_path)
 
     logger.info(f'Saving batch {batch_id} is complete.')

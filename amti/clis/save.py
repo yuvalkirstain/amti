@@ -23,7 +23,11 @@ logger = logging.getLogger(__name__)
     '--live', '-l',
     is_flag=True,
     help='Save HITs from the live MTurk site.')
-def save_batch(batch_dir, live):
+@click.option(
+    '--force', '-f',
+    is_flag=True,
+    help='Force saving hits even if not completed.')
+def save_batch(batch_dir, live, force=False):
     """Save results from the batch of HITs defined in BATCH_DIR.
 
     Given a directory (BATCH_DIR) that represents a batch of HITs with
@@ -37,6 +41,8 @@ def save_batch(batch_dir, live):
 
     actions.save.save_batch(
         client=client,
-        batch_dir=batch_dir)
+        batch_dir=batch_dir,
+        force=force
+    )
 
     logger.info('Finished saving batch.')
