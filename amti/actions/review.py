@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 def review_hit(
         client,
         hit_id,
+        data,
         approve_all):
     """Manually review the results from a HIT.
 
@@ -25,6 +26,8 @@ def review_hit(
         a boto3 client for MTurk.
     hit_id : str
         the ID for the HIT to approve or reject.
+    data : Dict[str, Any]
+        the data for the HIT.
     approve_all : bool
         a flag to decide approve all submissions
 
@@ -79,11 +82,16 @@ def review_hit(
                         'HIT ID: {hit_id}'
                         '\nAssignment ID: {assignment_id}'
                         '\n'
+                        '\nData'
+                        '\n======='
+                        '\n{data}'
+                        '\n'
                         '\nAnswers'
                         '\n======='
                         '\n{answers}'.format(
                             hit_id=hit_id,
                             assignment_id=assignment_id,
+                            data=json.dumps(data, indent=4),
                             answers=answers_xml.toprettyxml()))
 
                     assignment_action = click.prompt(
@@ -183,6 +191,8 @@ def review_batch(
         batch_dir, batchid_file_name)
     incomplete_file_path = os.path.join(
         batch_dir, settings.INCOMPLETE_FILE_NAME)
+    hit2data_file_path = os.path.join(
+        batch_dir, settings.HIT2DATA_FILE_NAME)
 
     with open(batchid_file_path) as batchid_file:
         batch_id = batchid_file.read().strip()
@@ -195,6 +205,9 @@ def review_batch(
     with open(incomplete_file_path) as incomplete_file:
         hit_ids = json.load(incomplete_file)['hit_ids']
 
+    with open(hit2data_file_path) as hit2data_file:
+        hit2data = json.load(hit2data_file)
+
     logger.info(f'Reviewing batch {batch_id}.')
 
     marked_assignments = []
@@ -202,6 +215,7 @@ def review_batch(
         marked_assignments.extend(review_hit(
             client=client,
             hit_id=hit_id,
+            data=hit2data[hit_id],
             approve_all=approve_all))
 
     logger.info(

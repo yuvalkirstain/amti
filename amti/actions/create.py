@@ -268,6 +268,7 @@ def upload_batch(
     logger.debug(f'New HIT Type (ID: {hittype_id}) created.')
 
     hit_ids = []
+    hit2data = {}
     with open(data_path, 'r') as data_file:
         for i, ln in enumerate(data_file):
             if ln.strip() == '':
@@ -285,6 +286,7 @@ def upload_batch(
                 RequesterAnnotation=requester_annotation,
                 **hit_properties)
             hit_id = hit_response['HIT']['HITId']
+            hit2data[hit_id] = ln_data
             logger.debug(f'Created New HIT (ID: {hit_id}).')
             hit_ids.append(hit_id)
 
@@ -297,6 +299,11 @@ def upload_batch(
         batch_dir, settings.INCOMPLETE_FILE_NAME)
     with open(incomplete_file_path, 'w') as incomplete_file:
         json.dump(ids, incomplete_file)
+
+    hit2data_file_name = os.path.join(
+        batch_dir, settings.HIT2DATA_FILE_NAME)
+    with open(hit2data_file_name, 'w') as hit2data_file:
+        json.dump(hit2data, hit2data_file)
 
     logger.info(f'Created {i+1} HITs.')
 

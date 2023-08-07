@@ -66,6 +66,7 @@ def tabular(
     _, hit_dir_subpaths = results_dir_subpaths['hit_dir']
     hit_file_name, _ = hit_dir_subpaths['hit']
     assignments_file_name, _ = hit_dir_subpaths['assignments']
+    hi2data = json.load(open(os.path.join(batch_dir, settings.HIT2DATA_FILE_NAME)))
 
     batchid_file_path = os.path.join(
         batch_dir, batchid_file_name)
@@ -157,6 +158,7 @@ def tabular(
                     utils.xml.get_node_text(free_text_tag))
 
                 row[question_identifier] = free_text
+                row["data"] = hi2data[hit['HIT']['HITId']]
 
             rows.append(row)
 

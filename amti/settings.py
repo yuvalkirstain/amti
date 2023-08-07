@@ -90,6 +90,9 @@ BATCH_DIR_STRUCTURE = ('batch-{batch_id}', {
 # ID).
 INCOMPLETE_FILE_NAME = '_INCOMPLETE'
 
+# the name of the file used to keep link between a data point and its corresponding HIT
+HIT2DATA_FILE_NAME = 'hit2data.json'
+
 # template for the directories that contain the XML answers for an
 # assignment
 XML_DIR_NAME_TEMPLATE = 'batch-{batch_id}-xml'
