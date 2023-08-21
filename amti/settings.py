@@ -137,3 +137,8 @@ QUALIFICATIONTYPE_PROPERTIES = {
     'RetryDelayInSeconds': int,
     'TestDurationInSeconds': int
 }
+
+# Others
+
+SEED = 42
+"""The seed for the random number generator used by ``amti``."""

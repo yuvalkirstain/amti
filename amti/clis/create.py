@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
     '--live', '-l',
     is_flag=True,
     help='Create HITs on the live MTurk site.')
-def create_batch(definition_dir, data_path, save_dir, check_cost, live):
+def create_batch(definition_dir, data_path, save_dir, check_cost, live, limit):
     """Create a batch of HITs using DEFINITION_DIR and DATA_PATH.
 
     Create a batch of HITs using DEFINITION_DIR and DATA_PATH, and then
@@ -69,7 +69,7 @@ def create_batch(definition_dir, data_path, save_dir, check_cost, live):
     client = utils.mturk.get_mturk_client(env)
 
     estimated_cost = actions.create.estimate_batch_cost(
-        definition_dir, data_path)
+        definition_dir, data_path, limit)
 
     logger.info(
         f'The estimated cost for this batch is ~{estimated_cost:.2f} USD.')
@@ -86,7 +86,9 @@ def create_batch(definition_dir, data_path, save_dir, check_cost, live):
         client=client,
         definition_dir=definition_dir,
         data_path=data_path,
-        save_dir=save_dir)
+        save_dir=save_dir,
+        limit=limit
+    )
 
     logger.info(
         f'Finished creating batch directory: {batch_dir}.'

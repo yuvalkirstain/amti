@@ -3,6 +3,7 @@
 import json
 import logging
 import os
+import random
 import shutil
 import tempfile
 import uuid
@@ -140,7 +141,33 @@ def initialize_batch_directory(
     return batch_dir
 
 
-def estimate_batch_cost(definition_dir, data_path):
+def get_line_hits(data_path, limit=None):
+    """
+    Get the lines of a JSONL file.
+
+    Parameters
+    ----------
+    data_path : str
+        the path to the JSONL file.
+    limit : int, optional
+        the maximum number of lines to return. If False/0, all lines
+
+    Returns
+    -------
+    list
+        a list of the lines in the JSONL file.
+    """
+    with open(data_path, 'r') as data_file:
+        lns = [ln for ln in data_file if ln.strip() != '']
+        logger.debug(f"Total number of non empty lines: {len(lns)}")
+
+    if limit:
+        random.Random(settings.SEED).shuffle(lns)
+        lns = lns[:limit]
+    return lns
+
+
+def estimate_batch_cost(definition_dir, data_path, limit=None):
     """
     Estimate the cost of a batch.
 
@@ -155,6 +182,8 @@ def estimate_batch_cost(definition_dir, data_path):
         the path to the batch's definition directory.
     data_path : str
         the path to the batch's data file.
+    limit : int, optional
+        the maximum number of lines to use from the data file. If False/0, all
 
     Returns
     -------
@@ -183,8 +212,7 @@ def estimate_batch_cost(definition_dir, data_path):
     with open(hit_properties_path, 'r') as hit_properties_file:
         hit_properties = json.load(hit_properties_file)
 
-    with open(data_path, "r") as data_file:
-        n_hits = sum(1 for ln in data_file if ln.strip() != '')
+    n_hits = len(get_line_hits(data_path, limit=limit))
 
     # Estimate cost
 
@@ -198,7 +226,9 @@ def estimate_batch_cost(definition_dir, data_path):
 
 def upload_batch(
         client,
-        batch_dir):
+        batch_dir,
+        limit=None
+):
     """Upload a batch to MTurk.
 
     Upload a batch to MTurk by creating HITs for it. To create a batch,
@@ -210,6 +240,8 @@ def upload_batch(
         a boto3 client for MTurk.
     batch_dir : str
         the path to the batch directory.
+    limit : int, optional
+        the maximum number of HITs to create. If not specified, all HITs will be created.
 
     Returns
     -------
@@ -269,26 +301,24 @@ def upload_batch(
 
     hit_ids = []
     hit2data = {}
-    with open(data_path, 'r') as data_file:
-        for i, ln in enumerate(data_file):
-            if ln.strip() == '':
-                logger.warning(f'Line {i+1} in {data_path} is empty. Skipping.')
-                continue
-            else:
-                logger.debug(f'Creating HIT {i+1} using data: {ln}')
 
-            ln_data = json.loads(ln.rstrip())
-            question = question_template.render(**ln_data)
-            requester_annotation = f'batch={batch_id}'
-            hit_response = client.create_hit_with_hit_type(
-                HITTypeId=hittype_id,
-                Question=question,
-                RequesterAnnotation=requester_annotation,
-                **hit_properties)
-            hit_id = hit_response['HIT']['HITId']
-            hit2data[hit_id] = ln_data
-            logger.debug(f'Created New HIT (ID: {hit_id}).')
-            hit_ids.append(hit_id)
+    lns = get_line_hits(data_path, limit=limit)
+
+    for i, ln in enumerate(lns):
+        logger.debug(f'Creating HIT {i+1} using data: {ln}')
+
+        ln_data = json.loads(ln.rstrip())
+        question = question_template.render(**ln_data)
+        requester_annotation = f'batch={batch_id}'
+        hit_response = client.create_hit_with_hit_type(
+            HITTypeId=hittype_id,
+            Question=question,
+            RequesterAnnotation=requester_annotation,
+            **hit_properties)
+        hit_id = hit_response['HIT']['HITId']
+        hit2data[hit_id] = ln_data
+        logger.debug(f'Created New HIT (ID: {hit_id}).')
+        hit_ids.append(hit_id)
 
     ids = {
         'hittype_id': hittype_id,
@@ -314,7 +344,9 @@ def create_batch(
         client,
         definition_dir,
         data_path,
-        save_dir):
+        save_dir,
+        limit,
+):
     """Create a batch, writing it to disk and uploading it to MTurk.
 
     Parameters
@@ -328,7 +360,8 @@ def create_batch(
         generate the HITs in the batch.
     save_dir : str
         the path to the directory in which to write the batch directory.
-
+    limit: int, optional
+        the maximum number of HITs to create. If None, all HITs will be created.
     Returns
     -------
     str
@@ -343,7 +376,7 @@ def create_batch(
 
     logger.info('Uploading batch to MTurk.')
 
-    ids = upload_batch(client=client, batch_dir=batch_dir)
+    ids = upload_batch(client=client, batch_dir=batch_dir, limit=limit)
 
     logger.info('HIT Creation Complete.')
 
