@@ -33,6 +33,11 @@ logger = logging.getLogger(__name__)
     '--live', '-l',
     is_flag=True,
     help='Create HITs on the live MTurk site.')
+@click.option(
+    '--limit', '-lm',
+    is_flag=False,
+    default=0,
+    help='Limit the number of HITs.')
 def create_batch(definition_dir, data_path, save_dir, check_cost, live, limit):
     """Create a batch of HITs using DEFINITION_DIR and DATA_PATH.
 
